@@ -147,6 +147,50 @@ COMMON_YUM_DEPENDENCIES = [
     # Puppeteer dependencies end here.
 ]
 
+# ALPINE_DEPENDENCIES = [
+#     "memcached",
+#     "rabbitmq-server",
+#     "supervisor",
+#     "git",
+#     "curl",
+#     "ca-certificates",
+#     "gettext",
+#     "moreutils",
+#     "unzip",
+#     "redis",
+#     "hunspell-en",
+#     "openjdk8-jre",
+#     "chromium",
+#     "chromium-chromedriver",
+#     "libx11",
+#     "libxcomposite",
+#     "libxrandr",
+#     "libxdamage",
+#     "libxi",
+#     "libxtst",
+#     "libnss",
+#     "libcups",
+#     "libxss",
+#     "libxshmfence",
+#     "mesa",
+#     "libegl",
+#     "libgbm",
+#     "libasound2",
+#     "libatk-bridge2.0-0",
+#     "libgtk-3-0",
+#     "libx11-xcb1",
+#     "libxcb-dri3-0",
+#     "libxss1",
+#     "xvfb",
+#     "postgresql15",
+#     "postgresql15-dev",
+#     "postgresql15-contrib",
+#     "build-base",
+#     "python3-dev",
+#     "py3-pip",
+#     "py3-virtualenv",
+# ]
+
 BUILD_GROONGA_FROM_SOURCE = False
 BUILD_PGROONGA_FROM_SOURCE = False
 if (vendor == "debian" and os_version in []) or (vendor == "ubuntu" and os_version in []):
@@ -198,6 +242,11 @@ elif "fedora" in os_families():
     ]
     BUILD_GROONGA_FROM_SOURCE = True
     BUILD_PGROONGA_FROM_SOURCE = True
+elif "alpine" in os_families():
+    SYSTEM_DEPENDENCIES = [
+        # *ALPINE_DEPENDENCIES,
+        *VENV_DEPENDENCIES,
+    ]
 
 if "fedora" in os_families():
     TSEARCH_STOPWORDS_PATH = f"/usr/pgsql-{POSTGRESQL_VERSION}/share/tsearch_data/"
@@ -221,6 +270,8 @@ def install_system_deps() -> None:
         install_yum_deps(deps_to_install)
     elif "debian" in os_families():
         install_apt_deps(deps_to_install)
+    elif "alpine" in os_families():
+        install_apk_deps(deps_to_install)
     else:
         raise AssertionError("Invalid vendor")
 
@@ -337,6 +388,11 @@ def install_yum_deps(deps_to_install: list[str]) -> None:
             f"/usr/pgsql-{POSTGRESQL_VERSION}/share/tsearch_data/en_us.affix",
         ]
     )
+
+
+def install_apk_deps(deps_to_install: list[str]) -> None:
+    run_as_root(["apk", "update"])
+    run_as_root(["apk", "add", *deps_to_install])
 
 
 def main(options: argparse.Namespace) -> NoReturn:
